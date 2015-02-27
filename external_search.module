@@ -1,0 +1,541 @@
+<?php
+/**
+ * @file
+ * External Search Module.
+ */
+
+/**
+ * Labels that are included in the UI
+ */
+define('LABEL_EXTERNAL_URL', "View original object");
+define('LABEL_INTERNAL_URL', "See more details and/or comment");
+
+/**
+ * Implements hook_menu().
+ */
+function external_search_menu() {
+  $items = array();
+
+  $items['admin/config/search/external-search'] = array(
+    'title' => 'External Search targets / apis',
+    'description' => 'Configure the CALS external search targets.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('external_search_add_target'),
+    'access arguments' => array('administer users'),
+    'file' => 'external_search.admin.inc',
+  );
+
+ 
+  // in $items['node/%node/cals-authentication'].
+  $items['admin/config/search/external-search/edit/%'] = array(
+    'title' => 'Edit External Search Target',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('external_search_edit_target', 5),
+    'access arguments' => array('administer users'),
+    'access callback' => TRUE,
+    'file' => 'external_search.admin.inc',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+
+
+  );
+  
+  $items['admin/config/search/external-search/delete/confirm/%'] = array(
+    'title' => 'Delete External Search Target',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('external_search_delete_confirm_target', 6),
+    'access arguments' => array('administer users'),
+		'access callback' => TRUE,
+
+    'file' => 'external_search.admin.inc',
+		'type' => MENU_NORMAL_ITEM,
+  );
+
+
+ 
+  $items['booksharesearch'] = array(
+    'title' => 'Bookshare Search',
+    'page callback' => 'cals_bookshare_search_view',
+    'access callback' => TRUE,
+
+    'type' => MENU_NORMAL_ITEM,
+    );
+  
+  
+  
+  $items['externalsearch'] = array(
+    //'title' => 'Open Library Search',
+    'page callback' => 'external_search_view',
+    'access callback' => TRUE,
+
+    'type' => MENU_NORMAL_ITEM,
+    );
+
+	$items['externalsearch/results'] = array(
+    //'title' => 'Open Library Search',
+    'page callback' => 'external_search_view_new',
+    'access callback' => TRUE,
+    'file' => "external_search.results.inc",
+    'type' => MENU_NORMAL_ITEM,
+    );
+
+  $items['request-new-title'] = array(
+    'title' => t('Request a new title'),
+    'page callback' => 'cals_request_new_title_form',
+    'access callback' => TRUE,
+    'file' => 'external_search.requestform.inc',
+    'type' => MENU_CALLBACK,
+    ); 
+
+
+
+  return $items;
+}
+
+
+
+/**
+ * Implements hook_token_info().
+ */
+function external_search_token_info() {
+  $info['types']['externalsearch'] = array(
+    'name' => t('External Search tokens'),
+    'description' => t('Tokens related to External Search.'),
+    'needs-data' => 'format',
+  );
+
+ // Tokens for the text format token type.
+  $info['tokens']['externalsearch']['keywords'] = array(
+    'name' => t('Keywords / Search-String'),
+    'description' => t("The keyword or search string passed to Bookshare, Open Library, etc.."),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function external_search_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  $sanitize = !empty($options['sanitize']);
+
+  if ($type == 'externalsearch') {
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'keywords':
+          // URL: programs/*/*/city or programs/*/*
+          $name = strtoupper(arg(1));
+          $replacements[$original] = $name;
+          break;
+
+    	}
+  	}
+	}
+  return $replacements;
+}
+
+
+/**
+ * Implements hook_permission()
+ *
+ */
+ 
+function external_search_permission(){
+    return array(
+    'administer cals external search' =>  array(
+      'title' => t('Administer External Search'),
+      'restrict access' => TRUE,
+    ),
+    'view cals external search' => array(
+      'title' => t('View CALS external search'),
+    )
+  );
+}
+ 
+  
+
+/**
+ * Implements hook_block_info().
+ */
+
+function external_search_block_info() {
+  $blocks = array();
+ 
+  $blocks['external_search_block'] = array(
+    'info' => t('Custom Block: CALS LOC Search Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  
+  );
+  $blocks['_cals_staff_login'] = array(
+    'info' => t('CALS Staff login'),
+    'cache' => DRUPAL_NO_CACHE,
+  
+  );
+  $blocks['_cals_extra_login'] = array(
+    'info' => t('CALS Library login'),
+    'cache' => DRUPAL_NO_CACHE,
+  
+  );  
+  return $blocks;
+}
+
+
+
+/** 
+ * Implements hook_block_view(). 
+ */ 
+function external_search_block_view($block_name = '') { 
+  global $user;
+  switch($block_name) {
+    case "external_search_block":
+      $block['subject'] = t('Cals LOC Search Block');
+      $block['content'] = external_search_view();
+      return $block;
+      break;
+     
+  }
+  
+  
+} 
+
+
+/**
+* Handle form submission.
+*/
+function external_search_add_target_submit($form, &$form_state) {
+
+	try {
+	  $num_insert = db_insert('external_search_targets')
+	    ->fields(array(
+	      'external_service' => $form_state['values']['external_service'],
+	      'api_key' => $form_state['values']['api_key'],
+	      'target_url' => $form_state['values']['target_url'],
+	      'status' => $form_state['values']['status'],
+	      
+	      
+	    ))
+	    ->execute();
+	}
+	catch (Exception $e) {
+	  drupal_set_message(t('db_update failed. Message = %message, query= %query',
+	    array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+	}
+  drupal_set_message( t('External search database / catalog "%service" added.', 
+  	array('%service' => $form_state['values']['external_service']) ) 
+  );
+
+}
+
+/**
+* Handle form update.
+*/
+function external_search_edit_target_submit($form, &$form_state) {
+
+	try {
+	
+	  $num_updated = db_update('external_search_targets')  
+		  ->fields(array(
+	      'external_service' => $form_state['values']['external_service'],
+	      'api_key' => $form_state['values']['api_key'],
+	      'weight' => $form_state['values']['weight'],
+	      'status' => $form_state['values']['status'],
+	      'target_url' => $form_state['values']['target_url'],
+	      
+		  ))
+		  ->condition('targetid', $form_state['values']['targetid'], '=')
+		  ->execute();
+	}
+	catch (Exception $e) {
+	  drupal_set_message(t('db_update failed. Message = %message, query= %query',
+	    array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+	}
+  drupal_set_message( t('External search database / catalog "%service" updated.', 
+  	array('%service' => $form_state['values']['external_service']) ) 
+  );
+	drupal_goto("admin/config/search/external-search");
+
+}
+
+
+
+/**
+* Handle form deletion.
+*/
+function external_search_delete_confirm_target_submit($form, &$form_state) {
+  if ($form_state['values']['op'] == 'Delete target'){
+    try {
+      $num_deleted = db_delete('external_search_targets')
+        ->condition('targetid', $form_state['values']['targetid'])
+        ->execute();
+    }
+    catch (Exception $e) {
+      drupal_set_message(t('db_update failed. Message = %message, query= %query',
+        array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+    }
+    drupal_set_message(t('External Search Service for "%name" deleted.', array('%name' => $form_state['values']['external_service'])));
+  } elseif ($form_state['values']['op'] == 'Cancel'){
+    drupal_set_message(t('Delete cancelled.'));
+  }
+  drupal_goto('admin/config/search/external-search');
+}
+
+
+/**
+ * Render a list of entries in the database.
+ */
+function external_search_list_targets() {
+
+ 
+  if ($entries = external_search_entries_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array(
+        check_plain($entry->targetid), 
+        check_plain($entry->external_service), 
+        check_plain($entry->weight), 
+				($entry->status == 1) ? t("Active") : t("Disabled"),
+        check_plain($entry->api_key), 
+        check_plain($entry->target_url),
+        l(t('Edit'), 'admin/config/search/external-search/edit/' . $entry->targetid ) .
+        ' / ' . l(t('Delete'), 'admin/config/search/external-search/delete/confirm/' . $entry->targetid),
+      );
+      /*
+      $rows[] = array_map('check_plain', (array) $entry); 
+      $rows = array_values($rows);
+      printPre($rows);
+      */
+    }
+    // Output a table.
+    $header = array(t('Search Target ID'), t('Database / Catalog'), t('weight'), t('status'), t('API Key'), t('URL Pattern'), t('Operations'));
+
+    $output = theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+/**
+ * Render a list of entries in the database.
+ */
+function external_search_entries_load($status = "NULL") {
+	//if status is null, return all entries, including inactive ones.
+	if($status == "NULL") return db_query("SELECT * FROM {external_search_targets} order by weight, external_service");
+
+	//else
+	return db_query("SELECT * FROM {external_search_targets} where status = :status order by weight, external_service",
+		array("status" => $status));
+
+  
+}
+
+/**
+ * Return entry for a given targetid
+ */
+function external_search_load_by_targetid($targetid) {
+  return db_query("SELECT * FROM {external_search_targets} where targetid = :id", array(":id" => $targetid));
+}
+
+
+/**
+ * Request a new title form; loads ...
+ */
+function cals_request_new_title_views_link() {
+  $html = '<div class="cals-no-search-results">';
+  $html .= '<h1 id="page-title" class="no-results-title">' . t("Sorry, no results found in NNELS for your search") . '</h1>';
+  drupal_set_title(t("No results found for your search"));
+  $html .= '<p>' . t('The good news is that NNELS is not the only source for audiobooks and ebooks.' . '</p>');
+  
+  /*
+  
+  if(isset($_GET['search_api_views_fulltext_2']) ) {
+	  $html  .= "<li>" . l("Bookshare Search", "externalsearch/bookshare/" . $_GET['search_api_views_fulltext_2']) . "</li>";
+	  $html  .= "<li>" . l("Open Library Search", "externalsearch/openlibrary/" . $_GET['search_api_views_fulltext_2']) . "</li>";
+		//keep this in case we later want an integrated search...
+	  //$html  .= "<p>" . l("Extended Search", "externalsearch/extended/" . $_GET['search_api_views_fulltext_2']) . "</p>";
+	} 
+  
+  */
+  
+  
+  //search string to pass to external db
+  if(isset($_GET['search_api_views_fulltext_2'])) {
+	  $search_string = $_GET['search_api_views_fulltext_2'];
+	  $link_search_string = preg_replace('/\s+/', '+', $search_string);
+    //$link_search_string = urlencode($search_string);
+
+	  $rs = external_search_entries_load(1); //result set
+	  $services = array();
+
+	  foreach($rs as $service) {
+	  	//dpm($service);
+	  	$services[] = t(ucfirst($service->external_service));
+	  	//$services[] = l(t($service->external_service),  "externalsearch/results/" . strtolower($service->external_service) . "/" . $search_string );
+	  }
+	  //$html .= theme("item_list", array("items" => $services, "type" => "ol", ) );
+	
+	}
+  //Buttonize and space these later
+  $html .= '<div class="externalsearch-options">';
+  $html .= '<div class="externalsearch-sources"><p>The following other services are currently available: <strong>' . implode(', ', $services) . '</strong></p></div>';
+  $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
+  $html .= '<div class="externalsearch-request-button">'. l(t('Place an order request'), "request-title" ) . '</div>';
+  $html .= "</div></div>";
+
+  return $html; 
+}
+
+
+/** 
+ * Implements hook_form_alter(). 
+ */ 
+function external_search_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == 'repository_item_node_form' && isset($_GET['vars']) ) {
+    require_once(drupal_get_path('module', "external_search") . "/external_search.open_library_marc.inc");
+
+    $item = json_decode($_GET['vars']);
+    $fieldnames = array_keys(field_info_instances("node", "repository_item"));
+    foreach($fieldnames as $f) {
+      printPre($f);
+      $form[$f][LANGUAGE_NONE][0]['value']['#type'] = 'value';
+    }
+    $form['title_field'][LANGUAGE_NONE][0]['value']['#default_value'] = $item->title;
+    $form['field_bibid'][LANGUAGE_NONE][0]['value']['#type'] = 'value';
+    $form['field_xml_string'][LANGUAGE_NONE][0]['value']['#default_value'] = _cals_map_open_library_marcxml($item);
+    //$form['title']['#value'] = "HAHA";
+  }
+  
+
+}
+
+   
+/**
+ * Validates that the field was left blank
+ */
+function _external_search_hidden_validate($form, &$form_state) {
+  if ($form_state['values']['external_search_hidden'] != "") {
+    form_set_error('', 'Your request could not be processed at this time.');
+    return FALSE;
+  }
+  return TRUE;
+}
+
+
+
+/**
+ * Returns information about the default search module.
+ *
+ * @return
+ *    The search_get_info() array element for the default search module, if any.
+ */
+function external_search_get_default_module_info() {
+  $info = external_search_get_info();
+  $default = variable_get('external_search_default_module', 'node');
+  if (isset($info[$default])) {
+    return $info[$default];
+  }
+  // The variable setting does not match any active module, so just return
+  // the info for the first active module (if any).
+  return reset($info);
+}
+
+/**
+ * Returns Search Results.
+ *
+ * @return
+ *    HTML
+ */ 
+
+function external_search_view($searchtype = '', $keywords = '') {
+  $results = ''; //array('#markup' => '');
+  $r =   array('#markup' => '');
+  $intro = '';
+  if(!empty($keywords) ) {
+    $results = '<div class="search-results">'; 
+    $results .= _cals_get_search_results($keywords, $searchtype);
+    $results .= '</div>'; 
+  }
+  return $intro . $results;
+}
+
+/* DEPRECATE
+function _external_search_get_sharethis() {
+
+ $inline_script = '<script type="text/javascript">var switchTo5x=false;</script>
+<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
+<script type="text/javascript">stLight.options({publisher: "97c5f00f-d37e-47ad-83ba-6f77e37e120a"});</script>';
+
+  $element = array(
+      '#type' => 'markup',
+      '#markup' => $inline_script,
+    );
+  drupal_add_html_head($element, 'sharethis');
+  return '<div class="social_media">' . "<span class='st_facebook_large' displayText='Facebook'></span>
+        <span class='st_twitter_large' displayText='Tweet'></span>
+        <span class='st_googleplus_large' displayText='Google +'></span>
+        <span class='st_sharethis_large' displayText='ShareThis'></span></div>";
+
+}
+*/
+
+
+function external_search_form_submit($form, &$form_state) {
+   if ($form_state['values']['keywords'] == '') {
+    //form_set_error('keywords', t('Please enter some keywords.'));
+    // Fall through to the form redirect.
+  }
+  $form_state['redirect'] = 'externalsearch/' . _external_search_get_fields_to_action($form_state);;
+
+}
+
+
+function theme_external_search_results($results){
+  $html = '';
+  $i = 0;
+  $items = array();
+  foreach($results as $result) {
+    $i++;
+    $items[] = array(
+      'data' => '<h3 class="title">' . l($result['title'], $result['link']) . '</h3>',
+      'class' => array("search-result"), // value for 'class' key MUST be an (indexed) array. Using a string value like '2 3 4' produces an error
+    );
+    
+  }
+
+  //$html = theme("item_list", array("items" => $items));
+  $attributes = array("class"=>"search-results node-results");
+  $html = theme_item_list(array('items' => $items, 'title' => "yoho", 'type' => "ol", 'attributes' => $attributes));
+  return $html;
+    /*
+     $variables['search_results'] = '';
+  if (!empty($variables['module'])) {
+    $variables['module'] = check_plain($variables['module']);
+  }
+  foreach ($variables['results'] as $result) {
+    $variables['search_results'] .= theme('search_result', array('result' => $result, 'module' => $variables['module']));
+  }
+  $variables['pager'] = theme('pager', array('tags' => NULL));
+  $variables['theme_hook_suggestions'][] = 'external_search_results__' . $variables['module']; 
+  */  
+}
+// If you don't want to use a template file, use a function called "theme_THEID" to create the HTML.
+function theme_myotherdata($var1, $var2){
+    return "<div>var1= $var1 and var2= $var2</div>";
+}
+
+function external_search_form_comment_node_external_search_record_alter(&$form, &$form_state, $form_id) { 
+  switch($form_id) {
+    case "huh":
+      
+      break;  
+  }
+  $form['#submit'][] = '_external_search_submit_form';
+}
+
+function _external_search_submit_form($form, &$form_state) {
+  $form_state['redirect'] = "media"; //I redirected them back to a page at the url '/media';
+}
+

@@ -1,0 +1,6 @@
+name = External Search
+description = Extended search for the CALS project. Searches and returns results from Open Library and Bookshare
+core = 7.x
+package = --CALS
+files[] = external_search.controller.inc
+dependencies[] = token

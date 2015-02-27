@@ -1,0 +1,80 @@
+<?php
+/**
+ * @file
+ * Installer for External Search module.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function external_search_enable() {
+  drupal_set_message(t('External Search module successfully installed. Please review the <a href="@settings">configuration settings</a>.', array('@settings' => url('admin/config/people/ilsauthen'))));
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function external_search_schema() {
+  $schema['external_search_targets'] = array(
+    'description' => 'Stores configuration information for external targets / api keys used by the External Search module.',
+    'fields' => array(
+      'targetid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Search target ID.'),
+      ),
+      'status'  => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('Whether or not this is an active target (0=false, 1=true).'),
+      ),
+      'weight'  => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('The relative order in which this service will be displayed. Lower numbers cause the service to float to the top.'),
+        'default' => 88,
+      ),
+      'external_service' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => t('The external catalog / database.'), 
+      ),
+      'target_url' => array(
+        'type' => 'text',
+        'length' => 512,
+        'not null' => TRUE,
+        'description' => t('The link to pass to the external service. Tokens you can pass: [keyword]'), 
+      ),
+      'api_key'  => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => t('The API Key associated with this service.'),
+      ),
+    ),
+    'primary key' => array('targetid'),
+    'indexes' => array(
+      'external_service' => array('external_service'),
+      'api_key' => array('api_key'),
+    ),
+  );
+
+  return $schema;
+}
+/**
+ * Adding weight field to table {my_module_node_properties}
+ */
+function external_search_update_7001() {
+  $table = 'external_search_targets';
+  $schema = drupal_get_schema_unprocessed('external_search', $table);
+  if (!db_table_exists($table)) {
+    db_create_table($table, $schema);
+  }
+  foreach (array('weight') as $field) {
+    db_add_field($table, $field, $schema['fields'][$field]);
+    }
+}
