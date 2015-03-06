@@ -344,45 +344,35 @@ function external_search_load_by_targetid($targetid) {
  * Request a new title form; loads ...
  */
 function cals_request_new_title_views_link() {
-  $html = '<div class="cals-no-search-results">';
-  $html .= '<h1 id="page-title" class="no-results-title">' . t("Sorry, no results found in NNELS for your search") . '</h1>';
-  drupal_set_title(t("No results found for your search"));
-  $html .= '<p>' . t('The good news is that NNELS is not the only source for audiobooks and ebooks.' . '</p>');
-  
-  /*
-  
-  if(isset($_GET['search_api_views_fulltext_2']) ) {
-	  $html  .= "<li>" . l("Bookshare Search", "externalsearch/bookshare/" . $_GET['search_api_views_fulltext_2']) . "</li>";
-	  $html  .= "<li>" . l("Open Library Search", "externalsearch/openlibrary/" . $_GET['search_api_views_fulltext_2']) . "</li>";
-		//keep this in case we later want an integrated search...
-	  //$html  .= "<p>" . l("Extended Search", "externalsearch/extended/" . $_GET['search_api_views_fulltext_2']) . "</p>";
-	} 
-  
-  */
-  
-  
+
   //search string to pass to external db
   if(isset($_GET['search_api_views_fulltext_2'])) {
-	  $search_string = $_GET['search_api_views_fulltext_2'];
-	  $link_search_string = preg_replace('/\s+/', '+', $search_string);
+    $search_string = $_GET['search_api_views_fulltext_2'];
+    $link_search_string = preg_replace('/\s+/', '+', $search_string);
     //$link_search_string = urlencode($search_string);
 
-	  $rs = external_search_entries_load(1); //result set
-	  $services = array();
+    $rs = external_search_entries_load(1); //result set
+    $services = array();
 
-	  foreach($rs as $service) {
-	  	//dpm($service);
-	  	$services[] = t(ucfirst($service->external_service));
-	  	//$services[] = l(t($service->external_service),  "externalsearch/results/" . strtolower($service->external_service) . "/" . $search_string );
-	  }
-	  //$html .= theme("item_list", array("items" => $services, "type" => "ol", ) );
-	
-	}
+    foreach($rs as $service) {
+      //dpm($service);
+      $services[] = t(ucfirst($service->external_service));
+      //$services[] = l(t($service->external_service),  "externalsearch/results/" . strtolower($service->external_service) . "/" . $search_string );
+    }
+    //$html .= theme("item_list", array("items" => $services, "type" => "ol", ) );
+  
+  }
+
+  $html = '<div class="cals-no-search-results">';
+  $html .= '<h1 id="page-title" class="no-results-title">' . t("Sorry, no search results found in NNELS") . '</h1>';
+  drupal_set_title(t("No results found for your search"));
+  $html .= '<p>' . t('The good news: free, accessible books might be available from these other services: ');
+  $html .= '<strong>' . implode(', ', $services) . '</strong></p>';
+
   //Buttonize and space these later
   $html .= '<div class="externalsearch-options">';
-  $html .= '<div class="externalsearch-sources"><p>The following other services are currently available: <strong>' . implode(', ', $services) . '</strong></p></div>';
   $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
-  $html .= '<div class="externalsearch-request-button">'. l(t('Place an order request'), "request-title" ) . '</div>';
+  $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "request-title" ) . '</div>';
   $html .= "</div></div>";
 
   return $html; 

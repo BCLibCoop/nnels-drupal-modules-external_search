@@ -24,6 +24,7 @@ function external_search_view_new($searchtype = '', $keywords = '') {
         $lists[] = _external_search_multi_view ($items, $target, $keywords);
     }//foreach;
     $output = implode(' ', $lists);
+    drupal_set_message(t('Please note: the links below will navigate you away from the NNELS website.'), 'status');
     return $output;
   }//if
 
@@ -39,7 +40,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
         switch ($target['external_service']) {
             case 1:
             case "bookshare":
-              $more_link = url('https://www.bookshare.org/search', array(
+              $morelibrivox_link = url('https://www.bookshare.org/search', array(
                 'query' => array(
                   'libraryToSearch' => 'bookshare',
                   'bookKeywords' => $urldec_keywords,
@@ -53,7 +54,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
             break;
 
             case 2:
-            case "librivox":
+            case "libriVox":
               $more_link = url('https://librivox.org/search', array(
                 'query' => array(
                   'q' => $urldec_keywords, 'search_form' => 'advanced', 'status' => 'complete')
@@ -96,7 +97,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
         $results = '<div><p>';
         if ($num_found) {
           $results .= 'Top ' .  number_format($num_found) . ' results found for <strong>"' .  $urldec_keywords . '"</strong> ' . 
-           ' at ' . ucfirst($target['external_service']); 
+           ' at ' . ucfirst($target['external_service'] . ':'); 
         }
         else {
           $results .=  t("Sorry, your search didn't return any records.");
@@ -172,7 +173,7 @@ function _cals_extended_search_get_array_items($target) {
       break;
 
       case 2:
-      case "librivox":
+      case "libriVox":
         $records = $contents['response']['docs'];
       break;
 
@@ -204,7 +205,7 @@ function _external_search_get_results($docs, $target) {
         break;
 
       case 2:
-      case "librivox":
+      case "libriVox":
         $data = _external_search_librivox_item_builder($item);
         break; 
 
@@ -360,7 +361,7 @@ function _external_search_librivox_item_builder($item) {
   $url = "http://librivox.org/". $matches[1];
 
   $me = array (
-    'target' => "librivox",
+    'target' => "libriVox",
     'key' => $item['identifier'],
     'title' => $item['title'],
     'author' => $item['creator'],
