@@ -40,7 +40,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
         switch ($target['external_service']) {
             case 1:
             case "bookshare":
-              $morelibrivox_link = url('https://www.bookshare.org/search', array(
+              $more_link = url('https://www.bookshare.org/search', array(
                 'query' => array(
                   'libraryToSearch' => 'bookshare',
                   'bookKeywords' => $urldec_keywords,
@@ -166,18 +166,18 @@ function _cals_extended_search_get_array_items($target) {
     $records = array();
     
     switch($targetid) {
-      case 1:
+      case 2:
       case "bookshare":
         //$arr[$target] = $contents['bookshare']['book']['list']['result'];
         $records = $contents['bookshare']['book']['list']['result'];
       break;
 
-      case 2:
+      case 5:
       case "libriVox":
         $records = $contents['response']['docs'];
       break;
 
-      case 3: 
+      case 8: 
       case "openlibrary":
         $records = $contents['docs'];
       break;
@@ -199,17 +199,17 @@ function _external_search_get_results($docs, $target) {
   foreach ($docs as $item) {
     $i++;
     switch($target['targetid']) {
-      case 1:
+      case 2:
       case "bookshare":
         $data = _external_search_bookshare_item_builder($item);
         break;
 
-      case 2:
+      case 5:
       case "libriVox":
         $data = _external_search_librivox_item_builder($item);
         break; 
 
-      case 3:  
+      case 8:  
       case "openlibrary":
         $data = _external_search_openlibrary_item_builder($item);
         break;

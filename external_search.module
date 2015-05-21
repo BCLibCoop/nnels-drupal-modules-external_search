@@ -372,7 +372,7 @@ function cals_request_new_title_views_link() {
   //Buttonize and space these later
   $html .= '<div class="externalsearch-options">';
   $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
-  $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "request-title" ) . '</div>';
+  $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "node/320" ) . '</div>';
   $html .= "</div></div>";
 
   return $html; 
