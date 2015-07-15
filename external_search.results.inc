@@ -13,30 +13,39 @@ function external_search_view_new($searchtype = '', $keywords = '') {
   $rs = external_search_entries_load(1);  
   $results = ''; //array('#markup' => '');
   $lists = array();
+
   if ($rs->rowCount()) {
+    
     foreach ($rs as $rses) {
       //build array from db object
       $rz = (array) $rses;
       $targets[] = $rz;
-    }//foreach
+    }
+    
     foreach($targets as $target) {
         $items = _cals_get_search_results_items ($keywords, $target);
         $lists[] = _external_search_multi_view ($items, $target, $keywords);
-    }//foreach;
+    }
+
     $output = implode(' ', $lists);
     drupal_set_message(t('Please note: the links below will navigate you away from the NNELS website.'), 'status');
+    
     return $output;
+
   }//if
 
   else {
+    
     return t("No search service");
+  
   }
-}
 
+}
 
 function _external_search_multi_view($items, $target, $keywords)  {
 
         $urldec_keywords = urldecode($keywords);
+        
         switch ($target['external_service']) {
             case 1:
             case "bookshare":
