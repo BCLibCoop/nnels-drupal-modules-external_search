@@ -23,8 +23,9 @@ function external_search_view_new($searchtype = '', $keywords = '') {
     }
     
     foreach($targets as $target) {
-        $items = _cals_get_search_results_items ($keywords, $target);
-        $lists[] = _external_search_multi_view ($items, $target, $keywords);
+        $items = external_search_get_results_items($keywords, $target);
+        dpm($items, "Items: ");
+        $lists[] = external_search_multi_view($items, $target, $keywords);
     }
 
     $output = implode(' ', $lists);
@@ -42,7 +43,8 @@ function external_search_view_new($searchtype = '', $keywords = '') {
 
 }
 
-function _external_search_multi_view($items, $target, $keywords)  {
+function external_search_multi_view($items, $target, $keywords)  {
+
 
         $urldec_keywords = urldecode($keywords);
         
@@ -59,6 +61,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
                   'search' => 'Advanced+Search',
                   '_categories' => 'on'
                   )));
+              dpm($items, "Items before array_slice");
               $items = array_slice($items, 0, 3); //grab the first 3 items from our list of filtered freelyAvailable
             break;
 
@@ -74,7 +77,15 @@ function _external_search_multi_view($items, $target, $keywords)  {
             case "openlibrary":
               $more_link = url('https://openlibrary.org/search', array(
                 'query' => array(
-                  'q' => $keywords, 'has_fulltext' => 'true')  
+                  'q' => $urldec_keywords, 'has_fulltext' => 'true')  
+                ));
+            break;
+
+            case 4:
+            case "bcopentextbooks":
+              $more_link = url('http://open.bccampus.ca/find-open-textbooks/', array(
+                'query' => array(
+                  'searchTerm' => $urldec_keywords, 'solrSearchSubmit' )  
                 ));
             break;
 
@@ -128,10 +139,7 @@ function _external_search_multi_view($items, $target, $keywords)  {
  *   tokenize the url string
  */ 
 
-function _cals_get_search_results_items($keywords, $service) {
-	//drupal_add_js(path_to_theme() . '/js/accordion.js', array('group' => JS_THEME));
-
-	//$keywords = preg_replace('/\s+/', '+', $keywords); //should do this replace when creating the initial link
+function external_search_get_results_items($keywords, $service) {
 
 	$targets = array();
 	$externalsearch = array();
@@ -145,7 +153,7 @@ function _cals_get_search_results_items($keywords, $service) {
 		'url' => $url,
 	);
   
-  $items = _cals_extended_search_get_array_items($target);
+  $items = external_search_get_array_items($target);
 	return $items;
 }
 
@@ -156,7 +164,7 @@ function _cals_get_search_results_items($keywords, $service) {
  *    array
  */ 
 
-function _cals_extended_search_get_array_items($target) {
+function external_search_get_array_items($target) {
   $options = array("absolute" => TRUE);
   $items = array();
   //loop thru each target and add to items array
@@ -171,6 +179,8 @@ function _cals_extended_search_get_array_items($target) {
     $contents = stream_get_contents($handle);
     fclose($handle);
     $contents = json_decode($contents, TRUE);
+
+    dpm($contents, "Contents: ");
 
     $records = array();
     
@@ -191,18 +201,23 @@ function _cals_extended_search_get_array_items($target) {
         $records = $contents['docs'];
       break;
 
+      case 4:
+      case "bcopentextbooks":
+        $records = $contents['results'];
+      break;
+
       default:
         return FALSE;
         break;  
     }
-    $items = array_merge($items, _external_search_get_results($records, $target[0]));
+    $items = array_merge($items, external_search_get_results($records, $target[0]));
   //} 
   return $items;
 
 }
 
 
-function _external_search_get_results($docs, $target) {
+function external_search_get_results($docs, $target) {
   $i=0;
   $items = array();
   foreach ($docs as $item) {
@@ -210,21 +225,26 @@ function _external_search_get_results($docs, $target) {
     switch($target['targetid']) {
       case 2:
       case "bookshare":
-        $data = _external_search_bookshare_item_builder($item);
+        $data = external_search_bookshare_item_builder($item);
         break;
 
       case 5:
       case "libriVox":
-        $data = _external_search_librivox_item_builder($item);
+        $data = external_search_librivox_item_builder($item);
         break; 
 
       case 8:  
       case "openlibrary":
-        $data = _external_search_openlibrary_item_builder($item);
+        $data = external_search_openlibrary_item_builder($item);
+        break;
+
+      case 4:
+      case "bcopentextbooks":
+        $data = external_search_bcopentextbooks_item_builder($item);
         break;
 
     }
-    $data = _external_search_format_result_item($data);
+    $data = external_search_format_result_item($data);
     
     if (!empty($data)) {
       $items[] = array(
@@ -241,7 +261,7 @@ function _external_search_get_results($docs, $target) {
  * Returns a formatted field.
  *
  */
-function _external_search_field_formatter($label, $fieldname, $value) {
+function external_search_field_formatter($label, $fieldname, $value) {
 
   $label = str_replace("_", " ", $label);
   $html = '<div class="field-' . $fieldname . '">';
@@ -255,13 +275,13 @@ function _external_search_field_formatter($label, $fieldname, $value) {
  *
  */
 
-function _external_search_format_result_item($item) {
+function external_search_format_result_item($item) {
 
   if (isset($item['title'])) { //Check if we have any entries blanked by Bookshare freelyAvailable == 0
   
-    $rec = _external_search_field_formatter('', "title", $item['linked_title']);
+    $rec = external_search_field_formatter('', "title", $item['linked_title']);
     if(isset($item['contributor']))  $rec .= 
-    _external_search_field_formatter('Contributor(s)', "contributor", $item['contributor']);
+    external_search_field_formatter('Contributor(s)', "contributor", $item['contributor']);
 
     $tmp = array();
     //ok this is a bit dirty - pull into a separate theme function?
@@ -277,11 +297,11 @@ function _external_search_format_result_item($item) {
 
     $attributes = array("class"=>"author-list");
     $authors = implode(", ", $tmp);
-    $rec .= _external_search_field_formatter($label, "authors", $authors);
+    $rec .= external_search_field_formatter($label, "authors", $authors);
 
     $fields = array("publish_year", /*"publisher",*/ "isbn", "description" );
     foreach($fields as $field) {
-      if(isset($item[$field])) $rec .= _external_search_field_formatter($field, $field, $item[$field]);
+      if(isset($item[$field])) $rec .= external_search_field_formatter($field, $field, $item[$field]);
     }
 
   // if($item['target'] == 'bookshare') {
@@ -291,7 +311,7 @@ function _external_search_format_result_item($item) {
   //   $json = json_encode($item);
   //   $create_node = l(t('Place an order request'), "request-new-title", array('query' => array('vars' => $json) ) );
   //  }
-  // $rec .= _external_search_field_formatter("", "link", $create_node);
+  // $rec .= external_search_field_formatter("", "link", $create_node);
   
   return $rec;
  }
@@ -300,14 +320,14 @@ function _external_search_format_result_item($item) {
 
 //module_load_include('inc', 'calsauthen', '/drivers/' . $driver);
 
-function _external_search_blurb_format($descr) {
+function external_search_blurb_format($descr) {
   $descr = wordwrap(strip_tags($descr), 200);
   $descr = explode("\n", $descr);
   $descr = $descr[0] . '...';
   return $descr;
 }
 
-function _external_search_bookshare_item_builder($item) {
+function external_search_bookshare_item_builder($item) {
   //dpm($item['freelyAvailable'], 'Item was available? ');
   if ($item['freelyAvailable'] == 1) {
 
@@ -322,7 +342,7 @@ function _external_search_bookshare_item_builder($item) {
       'author' => $item['author'],
       'linked_title' => l($item['title'], "http://bookshare.org/browse/book/" . $item['id']), 
     );
-    if(isset($item['briefSynopsis'])) $me['description'] = _external_search_blurb_format($item['briefSynopsis']);
+    if(isset($item['briefSynopsis'])) $me['description'] = external_search_blurb_format($item['briefSynopsis']);
   
     foreach($arr as $k => $v) {
       if (array_key_exists($k, $item)) $me[$v] = $item[$k];
@@ -332,7 +352,7 @@ function _external_search_bookshare_item_builder($item) {
     return FALSE;
 }
 
-function _external_search_openlibrary_item_builder($item) {
+function external_search_openlibrary_item_builder($item) {
 
   $arr = array(
     //"author_name" => "author",  
@@ -362,19 +382,20 @@ function _external_search_openlibrary_item_builder($item) {
 
 }
 
-function _external_search_librivox_item_builder($item) {
+function external_search_librivox_item_builder($item) {
   $arr = array('subject' => 'subject', 'publisher' => 'publisher');
   //http:\/\/
   $pattern = '/librivox.org\/(\w+(-\w+)*)(\w+(-\w+)*)*\/\\"/';
   preg_match($pattern, $item['description'], $matches);
+
   $url = "http://librivox.org/". $matches[1];
 
-  $me = array (
+  $me = array(
     'target' => "libriVox",
     'key' => $item['identifier'],
     'title' => $item['title'],
     'author' => $item['creator'],
-    'description' => _external_search_blurb_format($item['description']),
+    'description' => external_search_blurb_format($item['description']),
     'url' => $url,
     'publish_year' => $item['year'],
     'linked_title' => l($item['title'], $url),
@@ -387,6 +408,19 @@ function _external_search_librivox_item_builder($item) {
   } 
   return $me;
 
+}
+
+function external_search_bcopentextbooks_item_builder($item) {
+
+  $url = 'http://open.bccampus.ca/find-open-textbooks/?uuid=' . $item['uuid'];
+  $me = array(
+    'target' => 'bcopentextbooks',
+    'key' => $item['uuid'],
+    'title' => $item['name'],
+    'description' => external_search_blurb_format($item['description']),
+    //'publish_year' => implode(", " , $item['publish_year']),
+    'linked_title' => l($item['title'], $url),
+  );
 }
 
 
@@ -417,7 +451,7 @@ function external_search_get_pager($total) {
 }
 
 
-function _external_search_format_item($item,$id) {
+function external_search_format_item($item,$id) {
     $snippet = '';
     $tmp = array("note" => "Notes", "source" => "Source", "subject" => "Subject(s)");
 
