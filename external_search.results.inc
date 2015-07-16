@@ -24,7 +24,7 @@ function external_search_view_new($searchtype = '', $keywords = '') {
     
     foreach($targets as $target) {
         $items = external_search_get_results_items($keywords, $target);
-        dpm($items, "Items: ");
+
         $lists[] = external_search_multi_view($items, $target, $keywords);
     }
 
@@ -49,7 +49,7 @@ function external_search_multi_view($items, $target, $keywords)  {
         $urldec_keywords = urldecode($keywords);
         
         switch ($target['external_service']) {
-            case 1:
+            case 2:
             case "bookshare":
               $more_link = url('https://www.bookshare.org/search', array(
                 'query' => array(
@@ -61,31 +61,34 @@ function external_search_multi_view($items, $target, $keywords)  {
                   'search' => 'Advanced+Search',
                   '_categories' => 'on'
                   )));
-              dpm($items, "Items before array_slice");
+
               $items = array_slice($items, 0, 3); //grab the first 3 items from our list of filtered freelyAvailable
             break;
 
-            case 2:
+            case 5:
             case "libriVox":
               $more_link = url('https://librivox.org/search', array(
                 'query' => array(
-                  'q' => $urldec_keywords, 'search_form' => 'advanced', 'status' => 'complete')
+                  'q' => $urldec_keywords, 'search_form' => 'advanced', 'status' => 'complete'
+                  )
                 ));
             break;
 
-            case 3:
+            case 8:
             case "openlibrary":
               $more_link = url('https://openlibrary.org/search', array(
                 'query' => array(
-                  'q' => $urldec_keywords, 'has_fulltext' => 'true')  
+                  'q' => $urldec_keywords, 'has_fulltext' => 'true'
+                  )  
                 ));
             break;
 
-            case 4:
-            case "bcopentextbooks":
+            case 11:
+            case "BCcampus OpenEd":
               $more_link = url('http://open.bccampus.ca/find-open-textbooks/', array(
                 'query' => array(
-                  'searchTerm' => $urldec_keywords, 'solrSearchSubmit' )  
+                  'searchTerm' => $urldec_keywords 
+                  )  
                 ));
             break;
 
@@ -180,8 +183,6 @@ function external_search_get_array_items($target) {
     fclose($handle);
     $contents = json_decode($contents, TRUE);
 
-    dpm($contents, "Contents: ");
-
     $records = array();
     
     switch($targetid) {
@@ -201,8 +202,8 @@ function external_search_get_array_items($target) {
         $records = $contents['docs'];
       break;
 
-      case 4:
-      case "bcopentextbooks":
+      case 11:
+      case "BCcampus OpenEd":
         $records = $contents['results'];
       break;
 
@@ -238,9 +239,9 @@ function external_search_get_results($docs, $target) {
         $data = external_search_openlibrary_item_builder($item);
         break;
 
-      case 4:
-      case "bcopentextbooks":
-        $data = external_search_bcopentextbooks_item_builder($item);
+      case 11:
+      case "BCcampus OpenEd":
+        $data = external_search_bccampus_item_builder($item);
         break;
 
     }
@@ -410,17 +411,19 @@ function external_search_librivox_item_builder($item) {
 
 }
 
-function external_search_bcopentextbooks_item_builder($item) {
+function external_search_bccampus_item_builder($item) {
 
   $url = 'http://open.bccampus.ca/find-open-textbooks/?uuid=' . $item['uuid'];
   $me = array(
-    'target' => 'bcopentextbooks',
+    'target' => 'BCcampus OpenEd',
     'key' => $item['uuid'],
     'title' => $item['name'],
     'description' => external_search_blurb_format($item['description']),
     //'publish_year' => implode(", " , $item['publish_year']),
-    'linked_title' => l($item['title'], $url),
+    'linked_title' => l($item['name'], $url),
   );
+
+  return $me;
 }
 
 
