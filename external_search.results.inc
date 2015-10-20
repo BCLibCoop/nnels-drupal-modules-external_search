@@ -92,6 +92,15 @@ function external_search_multi_view($items, $target, $keywords)  {
                 ));
             break;
 
+            case 12:
+            case "Project Gutenberg":
+              $more_link = url('https://archive.org/details/gutenberg', array(
+                'query' => array(
+                  'and[]' => $urldec_keywords
+                  )
+                ));
+            break;
+
             default:
             return FALSE;
             break;  
@@ -207,6 +216,11 @@ function external_search_get_array_items($target) {
         $records = $contents['results'];
       break;
 
+      case 12:
+      case "Project Gutenberg":
+        $records = $contents['response']['docs'];
+      break;
+
       default:
         return FALSE;
         break;  
@@ -242,6 +256,11 @@ function external_search_get_results($docs, $target) {
       case 11:
       case "BCcampus OpenEd":
         $data = external_search_bccampus_item_builder($item);
+        break;
+
+      case 12:
+      case "Project Gutenberg":
+        $data = external_search_gutenberg_item_builder($item);
         break;
 
     }
@@ -407,6 +426,22 @@ function external_search_librivox_item_builder($item) {
     if (array_key_exists($k, $item)) $me[$v] = implode(", ", $item[$k]);
     
   } 
+  return $me;
+
+}
+
+function external_search_gutenberg_item_builder($item) {
+  $url = 'https://archive.org/details/' . $item['identifier'];
+
+  $me = array(
+      'target' => 'Project Gutenberg',
+      'key' => $item['identifier'],
+      'title' => $item['title'],
+      'author' => $item['creator'],
+      'description' => external_search_blurb_format($item['description']),
+      'linked_title' => l($item['title'], $url),
+  );
+
   return $me;
 
 }
