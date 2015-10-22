@@ -88,16 +88,16 @@ function external_search_multi_view($items, $target, $keywords)  {
               $more_link = url('http://open.bccampus.ca/find-open-textbooks/', array(
                 'query' => array(
                   'searchTerm' => $urldec_keywords 
-                  )  
+                  ),
                 ));
             break;
 
             case 12:
             case "Project Gutenberg":
-              $more_link = url('https://archive.org/details/gutenberg', array(
+              $more_link = url('https://www.gutenberg.org/ebooks/search/', array(
                 'query' => array(
-                  'and[]' => $urldec_keywords
-                  )
+                  'query' => $urldec_keywords
+                  ),
                 ));
             break;
 
@@ -226,7 +226,7 @@ function external_search_get_array_items($target) {
         break;  
     }
     $items = array_merge($items, external_search_get_results($records, $target[0]));
-  //} 
+  //}
   return $items;
 
 }
@@ -431,7 +431,8 @@ function external_search_librivox_item_builder($item) {
 }
 
 function external_search_gutenberg_item_builder($item) {
-  $url = 'https://archive.org/details/' . $item['identifier'];
+  $call_number = filter_var($item['call_number'], FILTER_SANITIZE_NUMBER_INT);
+  $url = 'https://www.gutenberg.org/ebooks/' . $call_number;
 
   $me = array(
       'target' => 'Project Gutenberg',
