@@ -285,7 +285,7 @@ function external_search_field_formatter($label, $fieldname, $value) {
 
   $label = str_replace("_", " ", $label);
   $html = '<div class="field-' . $fieldname . '">';
-  if(strlen($label)) $html .= '<span class="field-label">' . t($label) .': </span>';
+  if(strlen($label)) $html .= '<span class="field-label">' . t( ucfirst($label) ) .': </span>';
   $html .= '<div class="content">' . $value . '</div></div>';  
   return $html;
 }
@@ -319,7 +319,7 @@ function external_search_format_result_item($item) {
     $authors = implode(", ", $tmp);
     $rec .= external_search_field_formatter($label, "authors", $authors);
 
-    $fields = array("publish_year", /*"publisher",*/ "isbn", "description" );
+    $fields = array("publish_year", "formats", "isbn", "description" );
     foreach($fields as $field) {
       if(isset($item[$field])) $rec .= external_search_field_formatter($field, $field, $item[$field]);
     }
@@ -349,14 +349,17 @@ function external_search_blurb_format($descr) {
 
 function external_search_bookshare_item_builder($item) {
   //dpm($item['freelyAvailable'], 'Item was available? ');
+
   if ($item['freelyAvailable'] == 1) {
 
+    $formats = rtrim(implode(', ', $item['downloadFormat']), ', ');
+    
     $arr = array("publisher" => "publisher", "contributor" => "contributor");
     $me = array(
       'target' => "bookshare",
       'key' => $item['id'],
       'title' => $item['title'],
-    
+      'formats' => $formats,
       'source' => "Bookshare",
       'url' => "http://bookshare.org/key/" . $item['id'],
       'author' => $item['author'],
@@ -410,11 +413,14 @@ function external_search_librivox_item_builder($item) {
 
   $url = "http://librivox.org/". $matches[1];
 
+  $formats = rtrim(implode(', ', $item['format']), ', ');
+
   $me = array(
     'target' => "libriVox",
     'key' => $item['identifier'],
     'title' => $item['title'],
     'author' => $item['creator'],
+    'formats' => 'Various',
     'description' => external_search_blurb_format($item['description']),
     'url' => $url,
     'publish_year' => $item['year'],
@@ -434,11 +440,14 @@ function external_search_gutenberg_item_builder($item) {
   $call_number = filter_var($item['call_number'], FILTER_SANITIZE_NUMBER_INT);
   $url = 'https://www.gutenberg.org/ebooks/' . $call_number;
 
+  $formats = rtrim(implode(', ', $item['format']), ', ');
+
   $me = array(
       'target' => 'Project Gutenberg',
       'key' => $item['identifier'],
       'title' => $item['title'],
       'author' => $item['creator'],
+      'formats' => $formats,
       'description' => external_search_blurb_format($item['description']),
       'linked_title' => l($item['title'], $url),
   );
