@@ -45,8 +45,8 @@ function external_search_view_new($searchtype = '', $keywords = '') {
 
 function external_search_multi_view($items, $target, $keywords)  {
 
-
-        $urldec_keywords = urldecode($keywords);
+        //filter special chars from our queries that might interfere with target API or be stripped anyway, except + plus
+        $filter_keywords = preg_replace('/[^a-zA-Z0-9_ +%\[\]\.\(\)%&-]/s', '', $keywords);
         
         switch ($target['external_service']) {
             case 2:
@@ -54,7 +54,7 @@ function external_search_multi_view($items, $target, $keywords)  {
               $more_link = url('https://www.bookshare.org/search', array(
                 'query' => array(
                   'libraryToSearch' => 'bookshare',
-                  'bookKeywords' => $urldec_keywords,
+                  'bookKeywords' => $filter_keywords,
                   'booksToSearch' => 'FREELY_AVAILABLE',
                   'sortOrder' => 'RELEVANCE',
                   'disableSortOrder' => 'TITLE',
@@ -69,7 +69,7 @@ function external_search_multi_view($items, $target, $keywords)  {
             case "libriVox":
               $more_link = url('https://librivox.org/search', array(
                 'query' => array(
-                  'q' => $urldec_keywords, 'search_form' => 'advanced', 'status' => 'complete'
+                  'q' => $filter_keywords, 'search_form' => 'advanced', 'status' => 'complete'
                   )
                 ));
             break;
@@ -78,7 +78,7 @@ function external_search_multi_view($items, $target, $keywords)  {
             case "openlibrary":
               $more_link = url('https://openlibrary.org/search', array(
                 'query' => array(
-                  'q' => $urldec_keywords, 'has_fulltext' => 'true'
+                  'q' => $filter_keywords, 'has_fulltext' => 'true'
                   )  
                 ));
             break;
@@ -87,7 +87,7 @@ function external_search_multi_view($items, $target, $keywords)  {
             case "BCcampus OpenEd":
               $more_link = url('http://open.bccampus.ca/find-open-textbooks/', array(
                 'query' => array(
-                  'searchTerm' => $urldec_keywords 
+                  'searchTerm' => $filter_keywords 
                   ),
                 ));
             break;
@@ -96,7 +96,7 @@ function external_search_multi_view($items, $target, $keywords)  {
             case "Project Gutenberg":
               $more_link = url('https://www.gutenberg.org/ebooks/search/', array(
                 'query' => array(
-                  'query' => $urldec_keywords
+                  'query' => $filter_keywords
                   ),
                 ));
             break;
@@ -128,7 +128,7 @@ function external_search_multi_view($items, $target, $keywords)  {
         $arr = array();
         $results = '<div><p>';
         if ($num_found) {
-          $results .= 'Top ' .  number_format($num_found) . ' results found for <strong>"' .  $urldec_keywords . '"</strong> ' . 
+          $results .= 'Top ' .  number_format($num_found) . ' results found for <strong>"' .  $keywords . '"</strong> ' . 
            ' at ' . ucfirst($target['external_service'] . ':'); 
         }
         else {

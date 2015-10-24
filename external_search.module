@@ -348,8 +348,9 @@ function cals_request_new_title_views_link() {
   //search string to pass to external db
   if(isset($_GET['search_api_views_fulltext_2'])) {
     $search_string = $_GET['search_api_views_fulltext_2'];
+
+    //replace spaces with plusess
     $link_search_string = preg_replace('/\s+/', '+', $search_string);
-    //$link_search_string = urlencode($search_string);
 
     $rs = external_search_entries_load(1); //result set
     $services = array();
@@ -439,7 +440,7 @@ function external_search_get_default_module_info() {
  *    HTML
  */ 
 
-function external_search_view($searchtype = '', $keywords = '') {
+/*function external_search_view($searchtype = '', $keywords = '') {
   $results = ''; //array('#markup' => '');
   $r =   array('#markup' => '');
   $intro = '';
@@ -449,7 +450,7 @@ function external_search_view($searchtype = '', $keywords = '') {
     $results .= '</div>'; 
   }
   return $intro . $results;
-}
+}*/
 
 /* DEPRECATE
 function _external_search_get_sharethis() {
