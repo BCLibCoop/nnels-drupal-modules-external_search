@@ -363,8 +363,8 @@ function cals_request_new_title_views_link() {
   $html .= '<div class="externalsearch-options">';
   $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
   $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "node/320" ) . '</div>';
-   $html .= '<div class="">' . l(t('Search for Textbooks (BC Campus)'),  "externalsearch/single/bccampus/" . $link_search_string ) . '</div>';
-  $html .= '<div class="">' . l(t('Search Audiobooks & Poetry'),  "externalsearch/single/internet-archive/" . $link_search_string ) . '</div>';
+   $html .= '<div class="externalsearch-single"">' . l(t('Search for Textbooks (BC Campus)'),  "externalsearch/single/bccampus/" . $link_search_string ) . '</div>';
+  $html .= '<div class="externalsearch-single">' . l(t('Search other Audiobooks & Poetry (Internet Archive)'),  "externalsearch/single/internet-archive/" . $link_search_string ) . '</div>';
   $html .= "</div></div>";
 
   return $html; 
