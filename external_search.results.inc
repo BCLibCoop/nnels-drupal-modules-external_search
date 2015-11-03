@@ -42,10 +42,10 @@ function external_search_view_new($searchtype = '', $keywords = '') {
 
 }
 
-function external_search_single_view ($target = '', $keywords = '') {
-   if ($target === 'bccampus') $targetid = 11;
+function external_search_single_view ($target_slug = '', $keywords = '') {
+   if ($target_slug === 'bccampus') $targetid = 11;
 
-   switch ($target) {
+   switch ($target_slug) {
     case 'bccampus':
       $targetid = 11;
     break;
@@ -128,6 +128,15 @@ function external_search_multi_view($items, $target, $keywords)  {
               $more_link = url('https://www.gutenberg.org/ebooks/search/', array(
                 'query' => array(
                   'query' => $filter_keywords
+                  ),
+                ));
+            break;
+
+            case 13:
+            case "IA Audiobooks & Poetry":
+              $more_link = url('https://archive.org/search.php', array(
+                'query' => array(
+                  'query' => '('.$filter_keywords.')' . ' AND -collection:(librivoxaudio) -collection:(gutenberg) collection:(audio_bookspoetry) mediatype:(audio)'
                   ),
                 ));
             break;
@@ -228,28 +237,21 @@ function external_search_get_array_items($target) {
     
     switch($targetid) {
       case 2:
-      case "bookshare":
         //$arr[$target] = $contents['bookshare']['book']['list']['result'];
         $records = $contents['bookshare']['book']['list']['result'];
       break;
 
-      case 5:
-      case "libriVox":
-        $records = $contents['response']['docs'];
-      break;
-
       case 8: 
-      case "openlibrary":
         $records = $contents['docs'];
       break;
 
       case 11:
-      case "BCcampus OpenEd":
         $records = $contents['results'];
       break;
 
+      case 5:
       case 12:
-      case "Project Gutenberg":
+      case 13:
         $records = $contents['response']['docs'];
       break;
 
@@ -271,28 +273,27 @@ function external_search_get_results($docs, $target) {
     $i++;
     switch($target['targetid']) {
       case 2:
-      case "bookshare":
         $data = external_search_bookshare_item_builder($item);
         break;
 
       case 5:
-      case "libriVox":
         $data = external_search_librivox_item_builder($item);
         break; 
 
       case 8:  
-      case "openlibrary":
         $data = external_search_openlibrary_item_builder($item);
         break;
 
       case 11:
-      case "BCcampus OpenEd":
         $data = external_search_bccampus_item_builder($item);
         break;
 
       case 12:
-      case "Project Gutenberg":
         $data = external_search_gutenberg_item_builder($item);
+        break;
+
+      case 13:
+        $data = external_search_archive_item_builder($item);
         break;
 
     }
@@ -480,6 +481,26 @@ function external_search_gutenberg_item_builder($item) {
       'title' => $item['title'],
       'author' => $item['creator'],
       'formats' => $formats,
+      'description' => external_search_blurb_format($item['description']),
+      'linked_title' => l($item['title'], $url),
+  );
+
+  return $me;
+
+}
+
+function external_search_archive_item_builder($item) {
+  $identifier = $item['identifier'];
+  $url = 'https://archive.org/details/' . $identifier;
+
+  //$formats = rtrim(implode(', ', $item['format']), ', ');
+
+  $me = array(
+      'target' => 'IA Audiobooks & Poetry',
+      'key' => $item['identifier'],
+      'title' => $item['title'],
+      'author' => $item['creator'],
+      'formats' => 'Various',
       'description' => external_search_blurb_format($item['description']),
       'linked_title' => l($item['title'], $url),
   );
