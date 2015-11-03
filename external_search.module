@@ -52,21 +52,10 @@ function external_search_menu() {
 
 
  
-  $items['booksharesearch'] = array(
-    'title' => 'Bookshare Search',
-    'page callback' => 'cals_bookshare_search_view',
+  $items['externalsearch/single'] = array(
+    'page callback' => 'external_search_single_view',
     'access callback' => TRUE,
-
-    'type' => MENU_NORMAL_ITEM,
-    );
-  
-  
-  
-  $items['externalsearch'] = array(
-    //'title' => 'Open Library Search',
-    'page callback' => 'external_search_view',
-    'access callback' => TRUE,
-
+    'file' => "external_search.results.inc",
     'type' => MENU_NORMAL_ITEM,
     );
 
@@ -373,6 +362,7 @@ function cals_request_new_title_views_link() {
   //Buttonize and space these later
   $html .= '<div class="externalsearch-options">';
   $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
+  $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/single/bccampus/" . $link_search_string ) . '</div>';
   $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "node/320" ) . '</div>';
   $html .= "</div></div>";
 

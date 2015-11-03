@@ -10,7 +10,7 @@
 
 function external_search_view_new($searchtype = '', $keywords = '') {
 
-  $rs = external_search_entries_load(1);  
+  $rs = external_search_entries_load(1);  //$status = 1, active
   $results = ''; //array('#markup' => '');
   $lists = array();
 
@@ -21,10 +21,9 @@ function external_search_view_new($searchtype = '', $keywords = '') {
       $rz = (array) $rses;
       $targets[] = $rz;
     }
-    
+
     foreach($targets as $target) {
         $items = external_search_get_results_items($keywords, $target);
-
         $lists[] = external_search_multi_view($items, $target, $keywords);
     }
 
@@ -41,6 +40,38 @@ function external_search_view_new($searchtype = '', $keywords = '') {
   
   }
 
+}
+
+function external_search_single_view ($target = '', $keywords = '') {
+   if ($target === 'bccampus') $targetid = 11;
+
+   switch ($target) {
+    case 'bccampus':
+      $targetid = 11;
+    break;
+
+    case 'openlibrary':
+      $targetid = 8;
+    break;
+
+    case 'internet-archive':
+      $targetid = 13;
+    break;
+   }
+
+   $rs = external_search_load_by_targetid( $targetid );
+
+   if ($rs->rowCount() ) {
+    foreach ( $rs as $rses ) {
+      $qual_target = (array) $rses;
+   }
+ }
+
+   $items = external_search_get_results_items($keywords, $qual_target);
+   $lists[] = external_search_multi_view($items, $qual_target, $keywords);
+
+   $output = implode(' ', $lists);
+   return $output;
 }
 
 function external_search_multi_view($items, $target, $keywords)  {
@@ -160,6 +191,7 @@ function external_search_get_results_items($keywords, $service) {
 
 	$url = token_replace($service['target_url'], $externalsearch); //@todo - figure out how to implement token_replace
 	$url = str_replace("[keywords]", $keywords, $service['target_url']);
+
 	$target[] = array(
 		'targetid' => $service['targetid'],
 		'url' => $url,
