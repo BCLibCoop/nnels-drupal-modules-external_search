@@ -28,7 +28,8 @@ function external_search_view_new($searchtype = '', $keywords = '') {
     }
 
     $output = implode(' ', $lists);
-    drupal_set_message(t('Please note: the links below will navigate you away from the NNELS website.'), 'status');
+
+    drupal_set_message(t('Please note: the links in the sidebar as well as below will navigate you away from the NNELS website.'), 'status');
     
     return $output;
 

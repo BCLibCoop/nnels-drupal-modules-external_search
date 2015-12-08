@@ -151,43 +151,29 @@ function external_search_permission(){
 function external_search_block_info() {
   $blocks = array();
  
-  $blocks['external_search_block'] = array(
-    'info' => t('Custom Block: CALS LOC Search Block'),
+  $blocks['external_search_singles_block'] = array(
+    'info' => t('Custom Block: External Search Single Sources'),
+    'status' => true,
     'cache' => DRUPAL_NO_CACHE,
-  
+    'region' => BLOCK_REGION_NONE,
   );
-  $blocks['_cals_staff_login'] = array(
-    'info' => t('CALS Staff login'),
-    'cache' => DRUPAL_NO_CACHE,
-  
-  );
-  $blocks['_cals_extra_login'] = array(
-    'info' => t('CALS Library login'),
-    'cache' => DRUPAL_NO_CACHE,
-  
-  );  
   return $blocks;
 }
-
-
 
 /** 
  * Implements hook_block_view(). 
  */ 
-function external_search_block_view($block_name = '') { 
-  global $user;
+function external_search_block_view($block_name = '') {
   switch($block_name) {
-    case "external_search_block":
-      $block['subject'] = t('Cals LOC Search Block');
-      $block['content'] = external_search_view();
-      return $block;
-      break;
-     
+    case 'external_search_singles_block':
+      $block = array();
+      $block['subject'] = t('External Search Single Sources');
+      $block['content'] = external_search_singles_block_content();
+    break;
   }
   
-  
+  return $block;
 } 
-
 
 /**
 * Handle form submission.
@@ -363,8 +349,6 @@ function cals_request_new_title_views_link() {
   $html .= '<div class="externalsearch-options">';
   $html .= '<div class="externalsearch-keyword-button">' . l(t('Search other services for: "'. $search_string . '"'),  "externalsearch/results/extended/" . $link_search_string ) . '</div>';
   $html .= '<div class="externalsearch-request-button">'. l(t('Request a title'), "node/320" ) . '</div>';
-   $html .= '<div class="externalsearch-single"">' . l(t('Search for Textbooks (BC Campus)'),  "externalsearch/single/bccampus/" . $link_search_string ) . '</div>';
-  $html .= '<div class="externalsearch-single">' . l(t('Search other Audiobooks & Poetry (Internet Archive)'),  "externalsearch/single/internet-archive/" . $link_search_string ) . '</div>';
   $html .= "</div></div>";
 
   return $html; 
@@ -425,43 +409,24 @@ function external_search_get_default_module_info() {
 }
 
 /**
- * Returns Search Results.
+ * Returns Single Search Results.
  *
  * @return
  *    HTML
  */ 
 
-/*function external_search_view($searchtype = '', $keywords = '') {
-  $results = ''; //array('#markup' => '');
-  $r =   array('#markup' => '');
-  $intro = '';
-  if(!empty($keywords) ) {
-    $results = '<div class="search-results">'; 
-    $results .= _cals_get_search_results($keywords, $searchtype);
-    $results .= '</div>'; 
-  }
-  return $intro . $results;
-}*/
+function external_search_singles_block_content() {
+  $path = request_path();
+  //Always externalsearch/results/extended/KEYS
 
-/* DEPRECATE
-function _external_search_get_sharethis() {
+  $keywords = preg_split("/[\/]+/", $path);
+  $terms = $keywords[3];
 
- $inline_script = '<script type="text/javascript">var switchTo5x=false;</script>
-<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
-<script type="text/javascript">stLight.options({publisher: "97c5f00f-d37e-47ad-83ba-6f77e37e120a"});</script>';
+  $output = '<div class="externalsearch-single"">' . l(t('Search for Textbooks via BC Campus'),  "externalsearch/single/bccampus/" . $terms ) . '</div>';
+  $output .= '<div class="externalsearch-single">' . l(t('Search other Audiobooks & Poetry via the Internet Archive'),  "externalsearch/single/internet-archive/" . $terms ) . '</div>';
 
-  $element = array(
-      '#type' => 'markup',
-      '#markup' => $inline_script,
-    );
-  drupal_add_html_head($element, 'sharethis');
-  return '<div class="social_media">' . "<span class='st_facebook_large' displayText='Facebook'></span>
-        <span class='st_twitter_large' displayText='Tweet'></span>
-        <span class='st_googleplus_large' displayText='Google +'></span>
-        <span class='st_sharethis_large' displayText='ShareThis'></span></div>";
-
+  return $output;
 }
-*/
 
 
 function external_search_form_submit($form, &$form_state) {
