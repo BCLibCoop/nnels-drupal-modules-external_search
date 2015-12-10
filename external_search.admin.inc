@@ -63,6 +63,14 @@ function external_search_add_target() {
     '#options' => array( 0 => t("Disabled"), 1 => t("Active target") ),
     '#default_value' => 0,
   );
+  $form['additional'] = array(
+    '#title' => t('Additional source'),
+    '#type' => 'radios',
+    '#size' => 2,
+    '#required' => TRUE,
+    '#options' => array( 0 => t("No"), 1 => t("Yes") ),
+    '#default_value' => 0,
+  );
   $form['weight'] = array(
     '#title' => t('Relative weight on search page'),
     '#type' => 'textfield',
@@ -71,7 +79,6 @@ function external_search_add_target() {
     '#default_value' => 88,
     '#description' => t("lower weights will display higher"),
   );
-
   $form['target_url'] = array(
     '#title' => t('Target URL'),
     '#type' => 'textfield',
@@ -82,9 +89,6 @@ function external_search_add_target() {
     '#attributes' =>array('placeholder' => t('http://targeturl.com/myapi_key/[keywords]')),
     '#description' => t('Add the target URL, including tokens and api key'),
   );
-
-
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Add External Target'),
@@ -148,6 +152,16 @@ function external_search_edit_target($form, &$form_state, $targetid) {
     '#options' => array( 0 => t("Disabled"), 1 => t("Active target") ),
     '#default_value' => $values['status'],
   );
+
+  $form['additional'] = array(
+    '#title' => t('Additional source'),
+    '#type' => 'radios',
+    '#size' => 2,
+    '#required' => TRUE,
+    '#options' => array( 0 => t("No"), 1 => t("Yes") ),
+    '#default_value' => 0,
+  );
+
   $form['weight'] = array(
     '#title' => t('Relative weight on search page'),
     '#type' => 'textfield',

@@ -55,6 +55,12 @@ function external_search_schema() {
         'not null' => TRUE,
         'description' => t('The API Key associated with this service.'),
       ),
+      'additional'  => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('Whether or not this target is used in sidebar only (0=false, 1=true).'),
+      ),
     ),
     'primary key' => array('targetid'),
     'indexes' => array(
@@ -75,6 +81,20 @@ function external_search_update_7001() {
     db_create_table($table, $schema);
   }
   foreach (array('weight') as $field) {
+    db_add_field($table, $field, $schema['fields'][$field]);
+    }
+}
+
+/**
+ * Adding additional field to table {my_module_node_properties}
+ */
+function external_search_update_7002() {
+  $table = 'external_search_targets';
+  $schema = drupal_get_schema_unprocessed('external_search', $table);
+  if (!db_table_exists($table)) {
+    db_create_table($table, $schema);
+  }
+  foreach (array('additional') as $field) {
     db_add_field($table, $field, $schema['fields'][$field]);
     }
 }

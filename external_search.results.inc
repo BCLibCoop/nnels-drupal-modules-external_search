@@ -10,12 +10,11 @@
 
 function external_search_view_new($searchtype = '', $keywords = '') {
 
-  $rs = external_search_entries_load(1);  //$status = 1, active
+  $rs = external_search_entries_load(1, 0);  //$status = 1, active
   $results = ''; //array('#markup' => '');
   $lists = array();
 
   if ($rs->rowCount()) {
-    
     foreach ($rs as $rses) {
       //build array from db object
       $rz = (array) $rses;

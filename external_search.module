@@ -187,7 +187,7 @@ function external_search_add_target_submit($form, &$form_state) {
 	      'api_key' => $form_state['values']['api_key'],
 	      'target_url' => $form_state['values']['target_url'],
 	      'status' => $form_state['values']['status'],
-	      
+        'additional' => $form_state['values']['additional'],
 	      
 	    ))
 	    ->execute();
@@ -215,6 +215,7 @@ function external_search_edit_target_submit($form, &$form_state) {
 	      'api_key' => $form_state['values']['api_key'],
 	      'weight' => $form_state['values']['weight'],
 	      'status' => $form_state['values']['status'],
+        'additional' => $form_state['values']['additional'],
 	      'target_url' => $form_state['values']['target_url'],
 	      
 		  ))
@@ -261,7 +262,6 @@ function external_search_delete_confirm_target_submit($form, &$form_state) {
  */
 function external_search_list_targets() {
 
- 
   if ($entries = external_search_entries_load()) {
     $rows = array();
     foreach ($entries as $entry) {
@@ -273,6 +273,7 @@ function external_search_list_targets() {
 				($entry->status == 1) ? t("Active") : t("Disabled"),
         check_plain($entry->api_key), 
         check_plain($entry->target_url),
+        ($entry->additional == 1) ? t("Yes") : t("No"),
         l(t('Edit'), 'admin/config/search/external-search/edit/' . $entry->targetid ) .
         ' / ' . l(t('Delete'), 'admin/config/search/external-search/delete/confirm/' . $entry->targetid),
       );
@@ -283,7 +284,7 @@ function external_search_list_targets() {
       */
     }
     // Output a table.
-    $header = array(t('Search Target ID'), t('Database / Catalog'), t('weight'), t('status'), t('API Key'), t('URL Pattern'), t('Operations'));
+    $header = array(t('Search Target ID'), t('Database / Catalog'), t('weight'), t('status'), t('API Key'), t('URL Pattern'), t('additional'), t('Operations'));
 
     $output = theme('table', array('header' => $header, 'rows' => $rows));
   }
@@ -296,14 +297,16 @@ function external_search_list_targets() {
 /**
  * Render a list of entries in the database.
  */
-function external_search_entries_load($status = "NULL") {
-	//if status is null, return all entries, including inactive ones.
-	if($status == "NULL") return db_query("SELECT * FROM {external_search_targets} order by weight, external_service");
+function external_search_entries_load($status = NULL, $additional = NULL) {
+	
+  //Load a subset of targets based on status or additional
+  if ($status != NULL) return db_query("SELECT * FROM {external_search_targets} where status = :status AND additional = :additional order by weight, external_service",
+    array("status" => (int) $status,
+          "additional" => (int) $additional)
+    );
 
-	//else
-	return db_query("SELECT * FROM {external_search_targets} where status = :status order by weight, external_service",
-		array("status" => $status));
-
+  //Load all targets
+  else return db_query("SELECT * FROM {external_search_targets} order by weight, external_service");
   
 }
 
@@ -314,9 +317,8 @@ function external_search_load_by_targetid($targetid) {
   return db_query("SELECT * FROM {external_search_targets} where targetid = :id", array(":id" => $targetid));
 }
 
-
 /**
- * Request a new title form; loads ...
+ * No results found, external search option landing + request title
  */
 function cals_request_new_title_views_link() {
 
@@ -327,15 +329,13 @@ function cals_request_new_title_views_link() {
     //replace spaces with plusess
     $link_search_string = preg_replace('/\s+/', '+', $search_string);
 
-    $rs = external_search_entries_load(1); //result set
+    $rs = external_search_entries_load(1, 0); //result set
+    //dpm($rs, __FUNCTION__ );
     $services = array();
 
     foreach($rs as $service) {
-      //dpm($service);
-      $services[] = t(ucfirst($service->external_service));
-      //$services[] = l(t($service->external_service),  "externalsearch/results/" . strtolower($service->external_service) . "/" . $search_string );
+      $services[] = t(ucfirst($service->external_service)); 
     }
-    //$html .= theme("item_list", array("items" => $services, "type" => "ol", ) );
   
   }
 
@@ -358,7 +358,7 @@ function cals_request_new_title_views_link() {
 /** 
  * Implements hook_form_alter(). 
  */ 
-function external_search_form_alter(&$form, &$form_state, $form_id) {
+/*function external_search_form_alter(&$form, &$form_state, $form_id) {
   if($form_id == 'repository_item_node_form' && isset($_GET['vars']) ) {
     require_once(drupal_get_path('module', "external_search") . "/external_search.open_library_marc.inc");
 
@@ -375,7 +375,7 @@ function external_search_form_alter(&$form, &$form_state, $form_id) {
   }
   
 
-}
+}*/
 
    
 /**
@@ -416,73 +416,29 @@ function external_search_get_default_module_info() {
  */ 
 
 function external_search_singles_block_content() {
-  $path = request_path();
-  //Always externalsearch/results/extended/KEYS
+  /*Block only appears on externalsearch/results/extended/KEYS
+  Dependency injection would be nicer but this called in hook_block_view...*/
 
+  $path = request_path();
   $keywords = preg_split("/[\/]+/", $path);
   $terms = $keywords[3];
 
-  $output = '<div class="externalsearch-single"">' . l(t('Search for Textbooks via BC Campus'),  "externalsearch/single/bccampus/" . $terms ) . '</div>';
-  $output .= '<div class="externalsearch-single">' . l(t('Search other Audiobooks & Poetry via the Internet Archive'),  "externalsearch/single/internet-archive/" . $terms ) . '</div>';
+  $targets = external_search_entries_load(1, 1);
+  $results = $targets->fetchAll();
+
+  $blurbs = array(  //Later give these their own column alongside path
+    array('id' => 11, 'path' => 'bccampus', 'blurb' => "Search textbooks (BC Campus)"),
+    array('id' => 13, 'path' => 'internet-archive', 'blurb' => "Search audiobooks & poetry (Internet Archive)"),
+    );
+
+  $output = '';
+
+  foreach ($results as $result) {
+    foreach ($blurbs as $blurb) {
+      if ($result->targetid == $blurb['id'])
+      $output .= '<div class="externalsearch-single">' . l(t($blurb['blurb']),  "externalsearch/single/" . $blurb['path'] . '/' . $terms ) . '</div>';
+    }
+  }
 
   return $output;
 }
-
-
-function external_search_form_submit($form, &$form_state) {
-   if ($form_state['values']['keywords'] == '') {
-    //form_set_error('keywords', t('Please enter some keywords.'));
-    // Fall through to the form redirect.
-  }
-  $form_state['redirect'] = 'externalsearch/' . _external_search_get_fields_to_action($form_state);;
-
-}
-
-
-function theme_external_search_results($results){
-  $html = '';
-  $i = 0;
-  $items = array();
-  foreach($results as $result) {
-    $i++;
-    $items[] = array(
-      'data' => '<h3 class="title">' . l($result['title'], $result['link']) . '</h3>',
-      'class' => array("search-result"), // value for 'class' key MUST be an (indexed) array. Using a string value like '2 3 4' produces an error
-    );
-    
-  }
-
-  //$html = theme("item_list", array("items" => $items));
-  $attributes = array("class"=>"search-results node-results");
-  $html = theme_item_list(array('items' => $items, 'title' => "yoho", 'type' => "ol", 'attributes' => $attributes));
-  return $html;
-    /*
-     $variables['search_results'] = '';
-  if (!empty($variables['module'])) {
-    $variables['module'] = check_plain($variables['module']);
-  }
-  foreach ($variables['results'] as $result) {
-    $variables['search_results'] .= theme('search_result', array('result' => $result, 'module' => $variables['module']));
-  }
-  $variables['pager'] = theme('pager', array('tags' => NULL));
-  $variables['theme_hook_suggestions'][] = 'external_search_results__' . $variables['module']; 
-  */  
-}
-// If you don't want to use a template file, use a function called "theme_THEID" to create the HTML.
-function theme_myotherdata($var1, $var2){
-    return "<div>var1= $var1 and var2= $var2</div>";
-}
-
-function external_search_form_comment_node_external_search_record_alter(&$form, &$form_state, $form_id) { 
-  switch($form_id) {
-    case "huh":
-      
-      break;  
-  }
-  $form['#submit'][] = '_external_search_submit_form';
-}
-
-function _external_search_submit_form($form, &$form_state) {
-  $form_state['redirect'] = "media"; //I redirected them back to a page at the url '/media';
-}
-
