@@ -157,6 +157,7 @@ function external_search_block_info() {
     'cache' => DRUPAL_NO_CACHE,
     'region' => BLOCK_REGION_NONE,
   );
+
   return $blocks;
 }
 
@@ -416,8 +417,12 @@ function external_search_get_default_module_info() {
  */ 
 
 function external_search_singles_block_content() {
-  /*Block only appears on externalsearch/results/extended/KEYS
-  Dependency injection would be nicer but this called in hook_block_view...*/
+
+  /** Block only on module paths:
+  * /externalsearch/results/extended/$terms
+  * /externalsearch/single/$target/$terms
+  * Dependency injection would be nicer but this called in hook_block_view...
+  */
 
   $path = request_path();
   $keywords = preg_split("/[\/]+/", $path);
@@ -439,6 +444,8 @@ function external_search_singles_block_content() {
       $output .= '<div class="externalsearch-single">' . l(t($blurb['blurb']),  "externalsearch/single/" . $blurb['path'] . '/' . $terms ) . '</div>';
     }
   }
+
+  if ( $keywords[1] == 'single' ) $output .= '<div class="externalsearch-back"><p>' . l(t('Back to full sources'), 'externalsearch/results/extended/' . $terms ) . '</p></div>';
 
   return $output;
 }
