@@ -152,7 +152,7 @@ function external_search_multi_view($items, $target, $keywords)  {
         $themed_list .= '<div class="externalsearch-item-list">';
         $themed_list .= theme_item_list(array('items' => $items, 'title' => '', 
         'type' => "ul", 'attributes' => array("class"=>"search-results-list")));
-        $themed_list .= '<div class="externalsearch-more-results">';
+        $themed_list .= '<div class="externalsearch-more-results"><span class="more-results">';
 
         $num_found = count($items);
 
@@ -161,7 +161,7 @@ function external_search_multi_view($items, $target, $keywords)  {
           'attributes' => array(
             'class' => 'externalsearch-more-link')));
         }
-        $themed_list .= '</div></div>';
+        $themed_list .= '</span></div></div>';
         
         //no pager at this time; otherwise -> $pager = external_search_get_pager($num_found);
         
