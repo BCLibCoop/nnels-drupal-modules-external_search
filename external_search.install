@@ -81,7 +81,7 @@ function external_search_update_7001() {
     db_create_table($table, $schema);
   }
   foreach (array('weight') as $field) {
-    db_add_field($table, $field, $schema['fields'][$field]);
+    if (!db_field_exists($table, $field)) db_add_field($table, $field, $schema['fields'][$field]);
     }
 }
 
@@ -95,6 +95,6 @@ function external_search_update_7002() {
     db_create_table($table, $schema);
   }
   foreach (array('additional') as $field) {
-    db_add_field($table, $field, $schema['fields'][$field]);
+    if (!db_field_exists($table, $field)) db_add_field($table, $field, $schema['fields'][$field]);
     }
 }
